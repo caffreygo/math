@@ -545,10 +545,6 @@
             }
 
             function saveShape() {
-                if (library.length >= MAX_SHAPES) {
-                    toast(`❌ 图形库已达上限（最多 ${MAX_SHAPES} 种四连方）`, true);
-                    return;
-                }
                 if (selectedCells.length !== SHAPE_CELLS) {
                     toast('❌ 请选择 4 个相邻的格子', true);
                     return;
@@ -558,8 +554,8 @@
                     return;
                 }
                 const blocks = normalize(selectedCells);
-                if (isDuplicate(blocks)) {
-                    toast('❌ 图形库中已有相同形状（含旋转/镜像）', true);
+                if (isDuplicate(blocks) || library.length >= MAX_SHAPES) {
+                    toast('❌ 右侧纹样库中已有当前方案（含旋转/镜像）', true);
                     return;
                 }
                 library.push({
