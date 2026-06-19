@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>基础层作业：瓷饰半成品AI智能质检</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --primary-blue: #1E88E5;
+            --primary-green: #2E7D32;
+            --primary-red: #C62828;
+            --bg-white: #FFFFFF;
+            --bg-page: #ECEFF1;
+            --border-soft: #E2E8F0;
+            --text-dark: #1A2C3E;
+            --text-muted: #546E7A;
+            --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.08);
+            --mini-cell-size: 44px;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg-page);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            font-family: 'Segoe UI', 'Roboto', 'PingFang SC', '微软雅黑', system-ui, sans-serif;
+            padding: 64px 16px 32px;
+            color: var(--text-dark);
+        }
+
+        .app {
+            width: 80%;
+            background: var(--bg-white);
+            border-radius: 24px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .top-bar {
+            padding: 18px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            border-bottom: 2px solid #EEF2F6;
+        }
+
+        .top-bar-start {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0;
+            flex: 1;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(1.2rem, 4vw, 1.6rem);
+            font-weight: 700;
+        }
+
+        .top-bar .emoji {
+            font-size: 1.6rem;
+            flex-shrink: 0;
+        }
+
+        .home-link {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border-radius: 40px;
+            background: #F1F5F9;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .home-link:hover {
+            background: #E8F0FE;
+            color: var(--primary-blue);
+        }
+
+        .page-footer {
+            padding: 14px 24px 20px;
+            border-top: 2px solid #EEF2F6;
+            text-align: center;
+        }
+
+        .page-switch {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--primary-blue);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+
+        .page-switch:hover {
+            text-decoration: underline;
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .panel {
+            border: 1px solid var(--border-soft);
+            border-radius: 18px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 0;
+            min-height: 580px;
+        }
+
+        .panel-header {
+            padding: 12px 16px;
+            background: #FAFCFD;
+            font-weight: 700;
+            font-size: 1rem;
+            border-bottom: 2px solid #EEF2F6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .limit-counter {
+            font-size: 0.78rem;
+            background: #E8F0FE;
+            padding: 4px 12px;
+            border-radius: 40px;
+            color: var(--primary-blue);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .panel-body {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+        }
+
+        /* 制作区 5x5 网格 */
+        .creator-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 0;
+            width: 100%;
+            max-width: 320px;
+            margin: 0 auto;
+            aspect-ratio: 1 / 1;
+            border: 2px solid #CBD5E1;
+        }
+
+        .cell {
+            border: 1px solid #CBD5E1;
+            border-radius: 0;
+            background: var(--bg-white);
+            cursor: pointer;
+            transition: background 0.12s, transform 0.08s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: var(--primary-blue);
+            min-width: 0;
+            min-height: 0;
+        }
+
+        .cell:hover {
+            background: #F1F6FE;
+        }
+
+        .cell:active {
+            transform: scale(0.94);
+        }
+
+        .cell.selected {
+            background: #BBDEFB;
+            border-color: var(--primary-blue);
+        }
+
+        .hint {
+            font-size: 0.82rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn {
+            border: none;
+            padding: 10px 18px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            background: #F1F5F9;
+            color: var(--text-dark);
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .btn-clear {
+            flex: none;
+            min-width: auto;
+        }
+
+        .btn-primary {
+            background: var(--primary-blue);
+            color: #fff;
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 图形库：一行三个 */
+        .library-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        .shape-card {
+            position: relative;
+            border: 1px solid var(--border-soft);
+            border-radius: 14px;
+            padding: 6px;
+            background: #FAFCFD;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .shape-preview {
+            flex: 1;
+            width: 100%;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .shape-mini {
+            display: grid;
+            gap: 0;
+        }
+
+        .mini-cell {
+            width: var(--mini-cell-size);
+            height: var(--mini-cell-size);
+            border-radius: 0;
+        }
+
+        .mini-cell.filled {
+            box-shadow: inset 0 0 0 1px rgba(26, 59, 79, 0.5);
+        }
+
+        .shape-actions {
+            display: flex;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        .act-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 0.85rem;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            transition: transform 0.08s, opacity 0.15s;
+        }
+
+        .act-btn:hover {
+            opacity: 0.9;
+        }
+
+        .act-btn:active {
+            transform: scale(0.9);
+        }
+
+        .act-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .act-btn.rotate {
+            background: #3b82b6;
+        }
+
+        .act-btn.flip {
+            background: #f59e0b;
+        }
+
+        .act-btn.del {
+            background: #c0473b;
+        }
+
+        .toast {
+            position: fixed;
+            top: 150px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-12px);
+            background: #1E2A3A;
+            color: #fff;
+            padding: 16px 36px;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 1.15rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.2s, transform 0.2s;
+            pointer-events: none;
+            max-width: 90vw;
+            text-align: center;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        @media (max-width: 1400px) {
+            .app {
+                width: 96%;
+            }
+        }
+
+        @media (max-width: 680px) {
+            body {
+                padding: 12px 8px;
+            }
+
+            .app {
+                width: 96%;
+            }
+
+            .workspace {
+                grid-template-columns: 1fr;
+                gap: 16px;
+                padding: 14px;
+            }
+
+            .top-bar {
+                padding: 14px 18px;
+            }
+
+            .library-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <div class="top-bar">
+            <div class="top-bar-start">
+                <span class="emoji">🧩</span>
+                <h1>基础层作业：瓷饰半成品AI智能质检</h1>
+            </div>
+            <a href="index.html" class="home-link" title="返回主页">🏠 返回主页</a>
+        </div>
+
+        <div class="workspace">
+            <div class="panel">
+                <div class="panel-header">🎨 四连方实验室 (5×5)</div>
+                <div class="panel-body">
+                    <div class="creator-grid" id="creatorGrid"></div>
+                    <div class="hint">✏️ 点击 4 个相邻方格拼成四连方</div>
+                    <div class="toolbar">
+                        <button id="rotateCreatorBtn" class="act-btn rotate" title="旋转" disabled>🔄</button>
+                        <button id="flipCreatorBtn" class="act-btn flip" title="翻转" disabled>🪞</button>
+                        <button id="clearCreatorBtn" class="btn btn-clear">🗑️ 清除制作区</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <span>📦 “四连方”纹样库</span>
+                    <span class="limit-counter" id="libraryCounter">5 / 5</span>
+                </div>
+                <div class="panel-body">
+                    <div id="libraryContainer"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-footer">
+            <a href="a.html" class="page-switch">前往练习版 → 自行制作并保存纹样库</a>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        (function () {
+            const GRID_SIZE = 5;
+            const MAX_SHAPES = 5;
+            const SHAPE_CELLS = 4;
+            const MINI_CELL_SIZE = 44;
+            const COLORS = ['#1E88E5', '#2E7D32', '#C62828', '#F9A825', '#8E24AA', '#D81B60', '#5E35B1'];
+
+            // 五种标准四连方纹样（预置）
+            const PRESET_SHAPES = [
+                {
+                    id: 'preset_I',
+                    color: '#1E88E5',
+                    blocks: [{ r: 0, c: 0 }, { r: 1, c: 0 }, { r: 2, c: 0 }, { r: 3, c: 0 }]
+                },
+                {
+                    id: 'preset_L',
+                    color: '#2E7D32',
+                    blocks: [{ r: 0, c: 0 }, { r: 1, c: 0 }, { r: 2, c: 0 }, { r: 2, c: 1 }]
+                },
+                {
+                    id: 'preset_Z',
+                    color: '#C62828',
+                    blocks: [{ r: 0, c: 0 }, { r: 0, c: 1 }, { r: 1, c: 1 }, { r: 1, c: 2 }]
+                },
+                {
+                    id: 'preset_O',
+                    color: '#F9A825',
+                    blocks: [{ r: 0, c: 0 }, { r: 0, c: 1 }, { r: 1, c: 0 }, { r: 1, c: 1 }]
+                },
+                {
+                    id: 'preset_T',
+                    color: '#8E24AA',
+                    blocks: [{ r: 0, c: 0 }, { r: 0, c: 1 }, { r: 0, c: 2 }, { r: 1, c: 1 }]
+                }
+            ];
+
+            let selectedCells = [];
+
+            const creatorGrid = document.getElementById('creatorGrid');
+            const libraryContainer = document.getElementById('libraryContainer');
+            const libraryCounter = document.getElementById('libraryCounter');
+            const rotateCreatorBtn = document.getElementById('rotateCreatorBtn');
+            const flipCreatorBtn = document.getElementById('flipCreatorBtn');
+            const clearCreatorBtn = document.getElementById('clearCreatorBtn');
+            const toastEl = document.getElementById('toast');
+
+            let toastTimer = null;
+            function toast(msg, isError = false) {
+                toastEl.textContent = msg;
+                toastEl.style.background = isError ? '#C62828' : '#2E7D32';
+                toastEl.classList.add('show');
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => { toastEl.classList.remove('show'); }, 2200);
+            }
+
+            function normalize(blocks) {
+                if (!blocks.length) return [];
+                const minR = Math.min(...blocks.map(b => b.r));
+                const minC = Math.min(...blocks.map(b => b.c));
+                return blocks
+                    .map(b => ({ r: b.r - minR, c: b.c - minC }))
+                    .sort((a, b) => (a.r !== b.r ? a.r - b.r : a.c - b.c));
+            }
+
+            function canonicalKey(blocks) {
+                const base = normalize(blocks);
+                const variants = [];
+
+                const rotate = pts => {
+                    const maxR = Math.max(...pts.map(p => p.r));
+                    return pts.map(p => ({ r: p.c, c: maxR - p.r }));
+                };
+                const mirror = pts => {
+                    const maxC = Math.max(...pts.map(p => p.c));
+                    return pts.map(p => ({ r: p.r, c: maxC - p.c }));
+                };
+
+                let cur = base;
+                for (let i = 0; i < 4; i++) {
+                    variants.push(cur);
+                    cur = rotate(cur);
+                }
+                cur = mirror(base);
+                for (let i = 0; i < 4; i++) {
+                    variants.push(cur);
+                    cur = rotate(cur);
+                }
+
+                const keys = variants.map(v =>
+                    normalize(v).map(b => `${b.r},${b.c}`).join(';')
+                );
+                keys.sort();
+                return keys[0];
+            }
+
+            function isConnected(cells) {
+                if (cells.length !== SHAPE_CELLS) return false;
+                const set = new Set(cells.map(s => `${s.r},${s.c}`));
+                const queue = [cells[0]];
+                const visited = new Set([`${cells[0].r},${cells[0].c}`]);
+                const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+                while (queue.length) {
+                    const { r, c } = queue.shift();
+                    for (const [dr, dc] of dirs) {
+                        const key = `${r + dr},${c + dc}`;
+                        if (set.has(key) && !visited.has(key)) {
+                            visited.add(key);
+                            queue.push({ r: r + dr, c: c + dc });
+                        }
+                    }
+                }
+                return visited.size === SHAPE_CELLS;
+            }
+
+            function initLibrary() {
+                return PRESET_SHAPES.map(s => ({
+                    id: s.id,
+                    color: s.color,
+                    blocks: s.blocks.map(b => ({ ...b })),
+                    shapeKey: canonicalKey(s.blocks),
+                    preset: true
+                }));
+            }
+
+            let library = initLibrary();
+
+            function isValidCreatorShape() {
+                return selectedCells.length === SHAPE_CELLS && isConnected(selectedCells);
+            }
+
+            function updateCreatorToolbar() {
+                const valid = isValidCreatorShape();
+                rotateCreatorBtn.disabled = !valid;
+                flipCreatorBtn.disabled = !valid;
+            }
+
+            function renderCreator() {
+                creatorGrid.innerHTML = '';
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    for (let c = 0; c < GRID_SIZE; c++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        const isSel = selectedCells.some(s => s.r === r && s.c === c);
+                        if (isSel) {
+                            cell.classList.add('selected');
+                            cell.textContent = '✓';
+                        }
+                        cell.addEventListener('click', () => toggleCell(r, c));
+                        creatorGrid.appendChild(cell);
+                    }
+                }
+                updateCreatorToolbar();
+            }
+
+            function toggleCell(r, c) {
+                const idx = selectedCells.findIndex(s => s.r === r && s.c === c);
+                if (idx === -1) {
+                    if (selectedCells.length >= SHAPE_CELLS) {
+                        toast(`最多只能选择 ${SHAPE_CELLS} 个方格`, true);
+                        return;
+                    }
+                    selectedCells.push({ r, c });
+                } else {
+                    selectedCells.splice(idx, 1);
+                }
+                renderCreator();
+
+                if (selectedCells.length === SHAPE_CELLS) {
+                    if (isConnected(selectedCells)) {
+                        toast('✅ 四连方拼接成功！');
+                    } else {
+                        toast('❌ 4 个格子必须相互连通', true);
+                    }
+                }
+            }
+
+            function clearCreator() {
+                selectedCells = [];
+                renderCreator();
+            }
+
+            function deleteShape(id) {
+                const shape = library.find(s => s.id === id);
+                if (shape && shape.preset) {
+                    toast('❌ 预置纹样不可删除', true);
+                    return;
+                }
+                library = library.filter(s => s.id !== id);
+                renderLibrary();
+                toast('图形已删除');
+            }
+
+            function rotateBlocks(blocks) {
+                const maxR = Math.max(...blocks.map(b => b.r));
+                return blocks.map(b => ({ r: b.c, c: maxR - b.r }));
+            }
+            function flipBlocks(blocks) {
+                const maxC = Math.max(...blocks.map(b => b.c));
+                return blocks.map(b => ({ r: b.r, c: maxC - b.c }));
+            }
+
+            function getShapeCenter(cells) {
+                return {
+                    r: cells.reduce((s, b) => s + b.r, 0) / cells.length,
+                    c: cells.reduce((s, b) => s + b.c, 0) / cells.length
+                };
+            }
+
+            function findBestPlacement(normalizedBlocks, previousCells) {
+                const maxR = Math.max(...normalizedBlocks.map(b => b.r));
+                const maxC = Math.max(...normalizedBlocks.map(b => b.c));
+                const prevCenter = getShapeCenter(previousCells);
+                const prevMinR = Math.min(...previousCells.map(b => b.r));
+                const prevMinC = Math.min(...previousCells.map(b => b.c));
+
+                let best = null;
+                let bestCenterDist = Infinity;
+                let bestCornerDist = Infinity;
+
+                for (let topR = 0; topR <= GRID_SIZE - 1 - maxR; topR++) {
+                    for (let topC = 0; topC <= GRID_SIZE - 1 - maxC; topC++) {
+                        const placed = normalizedBlocks.map(b => ({ r: b.r + topR, c: b.c + topC }));
+                        const newCenter = getShapeCenter(placed);
+                        const centerDist =
+                            (prevCenter.r - newCenter.r) ** 2 +
+                            (prevCenter.c - newCenter.c) ** 2;
+                        const cornerDist =
+                            (prevMinR - topR) ** 2 +
+                            (prevMinC - topC) ** 2;
+
+                        if (
+                            centerDist < bestCenterDist - 1e-9 ||
+                            (Math.abs(centerDist - bestCenterDist) < 1e-9 && cornerDist < bestCornerDist)
+                        ) {
+                            bestCenterDist = centerDist;
+                            bestCornerDist = cornerDist;
+                            best = placed;
+                        }
+                    }
+                }
+
+                return best;
+            }
+
+            function transformCreator(transformFn) {
+                if (!isValidCreatorShape()) return;
+                const previousCells = selectedCells.map(b => ({ ...b }));
+                const minR = Math.min(...previousCells.map(b => b.r));
+                const minC = Math.min(...previousCells.map(b => b.c));
+                const relative = previousCells.map(b => ({ r: b.r - minR, c: b.c - minC }));
+                const transformed = normalize(transformFn(relative));
+                selectedCells = findBestPlacement(transformed, previousCells);
+                renderCreator();
+            }
+
+            function rotateCreator() {
+                transformCreator(rotateBlocks);
+            }
+
+            function flipCreator() {
+                transformCreator(flipBlocks);
+            }
+            function rotateShape(id) {
+                const s = library.find(x => x.id === id);
+                if (!s) return;
+                s.blocks = normalize(rotateBlocks(s.blocks));
+                s.shapeKey = canonicalKey(s.blocks);
+                renderLibrary();
+            }
+            function flipShape(id) {
+                const s = library.find(x => x.id === id);
+                if (!s) return;
+                s.blocks = normalize(flipBlocks(s.blocks));
+                s.shapeKey = canonicalKey(s.blocks);
+                renderLibrary();
+            }
+
+            function renderLibrary() {
+                libraryCounter.textContent = `${library.length} / ${MAX_SHAPES}`;
+                libraryContainer.innerHTML = '';
+
+                const grid = document.createElement('div');
+                grid.className = 'library-grid';
+
+                library.forEach(shape => {
+                    const card = document.createElement('div');
+                    card.className = 'shape-card';
+
+                    const maxR = Math.max(...shape.blocks.map(b => b.r));
+                    const maxC = Math.max(...shape.blocks.map(b => b.c));
+                    const rows = maxR + 1;
+                    const cols = maxC + 1;
+                    const cellSize = MINI_CELL_SIZE;
+
+                    const mini = document.createElement('div');
+                    mini.className = 'shape-mini';
+                    mini.style.gridTemplateColumns = `repeat(${cols}, ${cellSize}px)`;
+                    mini.style.gridTemplateRows = `repeat(${rows}, ${cellSize}px)`;
+
+                    const filled = new Set(shape.blocks.map(b => `${b.r},${b.c}`));
+                    for (let r = 0; r < rows; r++) {
+                        for (let c = 0; c < cols; c++) {
+                            const mc = document.createElement('div');
+                            mc.className = 'mini-cell';
+                            if (filled.has(`${r},${c}`)) {
+                                mc.classList.add('filled');
+                                mc.style.background = shape.color;
+                            }
+                            mini.appendChild(mc);
+                        }
+                    }
+                    const preview = document.createElement('div');
+                    preview.className = 'shape-preview';
+                    preview.appendChild(mini);
+                    card.appendChild(preview);
+
+                    const actions = document.createElement('div');
+                    actions.className = 'shape-actions';
+
+                    const rot = document.createElement('button');
+                    rot.className = 'act-btn rotate';
+                    rot.textContent = '🔄';
+                    rot.title = '旋转';
+                    rot.addEventListener('click', () => rotateShape(shape.id));
+
+                    const flp = document.createElement('button');
+                    flp.className = 'act-btn flip';
+                    flp.textContent = '🪞';
+                    flp.title = '翻转';
+                    flp.addEventListener('click', () => flipShape(shape.id));
+
+                    const del = document.createElement('button');
+                    del.className = 'act-btn del';
+                    del.textContent = '×';
+                    del.title = shape.preset ? '预置纹样不可删除' : '删除该图形';
+                    del.addEventListener('click', () => deleteShape(shape.id));
+
+                    actions.append(rot, flp, del);
+                    card.appendChild(actions);
+
+                    grid.appendChild(card);
+                });
+
+                libraryContainer.appendChild(grid);
+            }
+
+            rotateCreatorBtn.addEventListener('click', rotateCreator);
+            flipCreatorBtn.addEventListener('click', flipCreator);
+            clearCreatorBtn.addEventListener('click', clearCreator);
+
+            renderCreator();
+            renderLibrary();
+        })();
+    </script>
+</body>
+
+</html>
